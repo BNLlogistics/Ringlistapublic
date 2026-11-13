@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Delad ringlista</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1f4f8b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Delad lista">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f3f4f6; --surface:#fff; --fg:#171b22; --muted:#5c6573; --line:#d9dee6;
+  --accent:#1f4f8b; --accent-fg:#fff; --accent-soft:#e2eaf5; --done:#8a93a0; --warn:#a4501d; --rec:#c0392b;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#10141a; --surface:#1a2029; --fg:#e7ebf1; --muted:#9aa4b2; --line:#2b3442;
+  --accent:#7fb2ec; --accent-fg:#0b1220; --accent-soft:#1f2f45; --done:#6e7886; --warn:#e39a68; --rec:#ff7a6b; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;gap:12px}
+header h1{font-size:1.8rem;margin:0;flex:1;letter-spacing:-.01em}
+.icon-btn{font:inherit;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:10px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;font:inherit;font-weight:600;font-size:.98rem;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.tab .n{font-size:.78rem;font-weight:600;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 8px;min-width:22px;text-align:center}
+.tab[aria-selected=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.tab[aria-selected=true] .n{background:rgba(255,255,255,.22);color:inherit}
+.tabtitle{font-size:.85rem;color:var(--muted);margin-top:-8px}
+.status{font-size:.85rem;color:var(--muted)}
+.status.err{color:var(--warn)}
+.day{display:flex;flex-direction:column;gap:10px}
+.day h2{font-size:1.05rem;margin:0;display:flex;align-items:baseline;gap:8px}
+.day h2 .when{font-weight:400;font-size:.85rem;color:var(--muted)}
+.day h2 .count{font-weight:500;font-size:.8rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.name{font-weight:600;font-size:1.1rem;overflow-wrap:anywhere}
+.about{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
+.by{font-size:.8rem;color:var(--accent);margin-top:2px}
+.num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.95rem}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big{display:flex;align-items:center;justify-content:center;gap:8px;min-height:58px;border-radius:12px;font:inherit;font-weight:600;font-size:1.08rem;text-decoration:none;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent}
+.big svg{width:22px;height:22px;flex:none}
+.call{background:var(--accent);color:var(--accent-fg)}
+.call.off{background:var(--line);color:var(--muted);pointer-events:none}
+.mic{background:var(--accent-soft);color:var(--accent)}
+.mic.on{background:var(--rec);color:#fff}
+textarea{width:100%;font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;min-height:52px}
+.hint{font-size:.82rem;color:var(--accent);min-height:1.1em}
+.hint.err{color:var(--warn)}
+.row{display:flex;align-items:center;gap:10px}
+.check{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.95rem;padding:4px 0}
+.check input{width:24px;height:24px;accent-color:var(--accent)}
+.del{margin-left:auto;font:inherit;font-size:.8rem;color:var(--muted);background:none;border:none;padding:8px;cursor:pointer}
+.del.confirm{color:var(--warn);font-weight:600}
+.card.isdone{opacity:.72}
+.card.isdone .name{text-decoration:line-through;text-decoration-color:var(--done)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--muted)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+form{display:grid;gap:10px;margin-top:12px}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input[type=text],input[type=tel],input[type=date],input[type=password],select{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%}
+.btn{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-fg);border:none;border-radius:10px;padding:12px 16px;cursor:pointer;justify-self:start}
+.btn.quiet{background:var(--line);color:var(--fg)}
+.list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.setup h2{margin:0;font-size:1.2rem}
+.setup ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.setup a{color:var(--accent)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:608px;margin:0 auto;background:var(--fg);color:var(--bg);border-radius:12px;padding:14px 16px;opacity:0;visibility:hidden;transform:translateY(24px);transition:opacity .2s,transform .2s,visibility 0s .2s;pointer-events:none}
+.toast.show{opacity:1;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Delad ringlista</h1>
+    <button class="icon-btn" id="refresh" aria-label="Uppdatera listan" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Personer" hidden></nav>
+  <div id="status" class="status" hidden></div>
+
+  <section class="setup" id="setup" hidden>
+    <h2>Koppla den delade listan</h2>
+    <p style="margin:0">Görs en gång. Koden låter appen läsa och spara i gängets gemensamma lista på GitHub, och sparas bara i den här telefonen.</p>
+    <ol>
+      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Öppna GitHub och skapa en ny kod</a>.</li>
+      <li>Namn: <b>Delad ringlista</b>. Giltighet: <b>No expiration</b> (eller ett år).</li>
+      <li>Resource owner: välj <b>organisationen</b> (inte ditt eget namn).</li>
+      <li>Repository access: <b>Only select repositories</b> → välj <b>Ringlista</b>.</li>
+      <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
+      <li>Tryck <b>Generate token</b>, kopiera koden och klistra in här.</li>
+    </ol>
+    <form id="tokenform">
+      <label for="me">Ditt namn (din flik)<input id="me" type="text" autocomplete="given-name" required placeholder="t.ex. Marcus"></label>
+      <label for="owner">Organisationens namn på GitHub<input id="owner" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required></label>
+      <label for="repo">Förrådet med listan<input id="repo" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="Ringlista" required></label>
+      <label for="token">Kod<input id="token" type="password" autocomplete="off" placeholder="github_pat_…" required></label>
+      <button class="btn" type="submit">Koppla</button>
+    </form>
+  </section>
+
+  <main id="days"></main>
+
+  <details id="addbox" hidden>
+    <summary id="addsummary">Lägg till samtal</summary>
+    <form id="addform">
+      <label for="f-person">I vems flik<select id="f-person"></select></label>
+      <label for="f-name">Vem ska ringas<input id="f-name" type="text" required placeholder="t.ex. Krylbo Elmontage"></label>
+      <label for="f-phone">Nummer<input id="f-phone" type="tel" placeholder="070-123 45 67"></label>
+      <label for="f-about">Ärende<input id="f-about" type="text" placeholder="Vad gäller samtalet?"></label>
+      <label for="f-date">Dag<input id="f-date" type="date"></label>
+      <button class="btn" type="submit">Lägg till</button>
+    </form>
+  </details>
+
+  <details id="historybox" hidden>
+    <summary>Klara samtal (<span id="donecount">0</span>)</summary>
+    <div class="list" id="donelist"></div>
+  </details>
+
+  <details id="settings" hidden>
+    <summary>Inställningar</summary>
+    <div style="display:grid;gap:12px;margin-top:12px">
+      <p class="status" style="margin:0">Du är inloggad som <b id="whoami"></b>. Lägg appen på hemskärmen: tryck Dela i Safari → Lägg till på hemskärmen.</p>
+      <form id="personform" style="margin:0">
+        <label for="p-name">Lägg till en flik för en ny person<input id="p-name" type="text" placeholder="Namn" required></label>
+        <button class="btn quiet" type="submit">Lägg till flik</button>
+      </form>
+      <button class="btn quiet" type="button" id="logout">Byt kod eller namn</button>
+    </div>
+  </details>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* Delad ringlista. All data ligger i calls.json i ett privat förråd i en GitHub-organisation:
+   {"people":["Marcus","Arvid"],"calls":[{...,"person":"Marcus","addedBy":"Arvid"}]}
+   Varje person har en flik. Alla kan lägga in, anteckna och bocka av i alla flikar. */
+const PATH='calls.json';
+function store(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+function read(k){try{return localStorage.getItem(k)}catch(e){return null}}
+const HOST_OWNER=/\.github\.io$/i.test(location.hostname)?location.hostname.split('.')[0]:'';
+let OWNER=read('delad_owner')||HOST_OWNER, REPO=read('delad_repo')||'Ringlista', ME=read('delad_me')||'';
+const api=()=>`https://api.github.com/repos/${encodeURIComponent(OWNER)}/${encodeURIComponent(REPO)}/contents/${PATH}`;
+const PHONE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>';
+const MIC_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>';
+const STOP_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+const $=id=>document.getElementById(id);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+
+let token=null, calls=[], people=[], sha=null, recording=null, pendingRender=false;
+let tab=read('delad_tab')||ME;
+const drafts={}, saveTimers={};
+let queue=Promise.resolve();
+
+function getToken(){return read('delad_token')}
+function setToken(t){store('delad_token',t||null)}
+function toast(m,ms=3500){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),ms)}
+function status(m,err){const s=$('status');s.hidden=!m;s.textContent=m||'';s.className='status'+(err?' err':'')}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function cleanNum(p){return String(p||'').replace(/[^\d+]/g,'')}
+function b64enc(s){const b=new TextEncoder().encode(s);let bin='';for(let i=0;i<b.length;i+=0x8000)bin+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(bin)}
+function b64dec(s){const bin=atob(s.replace(/\s/g,''));const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return new TextDecoder().decode(b)}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function today(){return iso(new Date())}
+function addDays(s,n){const [y,m,d]=s.split('-').map(Number);return iso(new Date(y,m-1,d+n))}
+function dayLabel(s){
+  if(!s) return ['Utan dag',''];
+  const t=today(),[y,m,d]=s.split('-').map(Number);
+  const pretty=new Date(y,m-1,d).toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long'});
+  if(s===t) return ['Idag',pretty];
+  if(s===addDays(t,1)) return ['Imorgon',pretty];
+  return [pretty.charAt(0).toUpperCase()+pretty.slice(1),''];
+}
+const same=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
+function findPerson(n){return people.find(p=>same(p,n))}
+/* Flikordning: du själv först, sedan övriga i den ordning de lades till. */
+function tabList(){
+  const list=[...people];
+  for(const c of calls){const p=c.person||'Övrigt';if(!list.some(x=>same(x,p)))list.push(p)}
+  const mine=list.findIndex(p=>same(p,ME));if(mine>0)list.unshift(list.splice(mine,1)[0]);
+  return list;
+}
+function personOf(c){return c.person||'Övrigt'}
+
+async function gh(method,body){
+  const r=await fetch(api()+(method==='GET'?'?t='+Date.now():''),{method,headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  if(!r.ok){const e=new Error('http '+r.status);e.status=r.status;throw e}
+  return r.json();
+}
+async function load(){
+  let j;
+  try{j=await gh('GET')}
+  catch(e){
+    if(e.status!==404) throw e;
+    const c=await gh('PUT',{message:'Skapa delad ringlista',content:b64enc(JSON.stringify({people:[],calls:[]},null,1))});
+    sha=c.content.sha;calls=[];people=[];return;
+  }
+  sha=j.sha;
+  const data=JSON.parse(b64dec(j.content));
+  calls=Array.isArray(data)?data:(data.calls||[]);
+  people=Array.isArray(data.people)?data.people:[];
+}
+/* Alla ändringar går genom en kö: hämta senaste, applicera ändringen, spara. Krockar provas om. */
+function change(fn,label){
+  queue=queue.then(async()=>{
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        await load();
+        fn(calls,people);
+        const j=await gh('PUT',{message:(label||'Uppdatera ringlista')+' ('+ME+')',content:b64enc(JSON.stringify({people,calls},null,1)),sha});
+        sha=j.content.sha;
+        status('');
+        return true;
+      }catch(e){
+        if(e.status===409||e.status===422) continue;
+        if(e.status===401||e.status===403){status('Koden fungerar inte längre. Öppna Inställningar → Byt kod.',true);return false}
+        status('Kunde inte spara (ingen täckning?). Försöker igen när du ändrar något.',true);return false;
+      }
+    }
+    status('Kunde inte spara just nu, försök igen.',true);return false;
+  });
+  return queue;
+}
+
+function busy(){return !!recording||(document.activeElement&&['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))}
+async function refresh(quiet){
+  const btn=$('refresh');btn.classList.add('spin');
+  try{await load();status('');if(busy())pendingRender=true;else render()}
+  catch(e){
+    if(e.status===401||e.status===403||e.status===404){if(!quiet)status('Appen når inte listan. Kontrollera att koden har tillgång till '+REPO+'.',true)}
+    else if(!quiet) status('Ingen kontakt med listan just nu. Visar senast hämtade.',true);
+  }
+  btn.classList.remove('spin');
+}
+
+function saveNote(it,value,hint){
+  drafts[it.id]=value;
+  clearTimeout(saveTimers[it.id]);
+  saveTimers[it.id]=setTimeout(async()=>{
+    const ok=await change(cs=>{const c=cs.find(x=>x.id===it.id);if(c)c.outcome=value},'Anteckning: '+it.name);
+    if(ok){it.outcome=value;if(drafts[it.id]===value)delete drafts[it.id];if(hint&&!recording){hint.className='hint';hint.textContent='Sparat'}}
+    else if(hint){hint.className='hint err';hint.textContent='Inte sparat än'}
+  },1500);
+}
+
+function dictate(it,ta,btn,hint){
+  if(recording){recording.stop();return}
+  const fallback=msg=>{ta.focus();hint.className='hint';hint.textContent=msg||'Tryck på mikrofonen nere till höger på tangentbordet och prata.'};
+  if(!SR) return fallback();
+  let rec;try{rec=new SR()}catch(e){return fallback()}
+  rec.lang='sv-SE';rec.continuous=true;rec.interimResults=true;
+  const base=ta.value?ta.value.replace(/\s+$/,'')+' ':'';let fin='';
+  rec.onresult=e=>{let tmp='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript.trim()+' ';else tmp+=r[0].transcript}ta.value=(base+fin+tmp).trim();drafts[it.id]=ta.value};
+  rec.onerror=e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error))fallback('Mikrofonen är inte tillåten här. Använd mikrofonen på tangentbordet.')};
+  rec.onend=()=>{recording=null;btn.classList.remove('on');btn.innerHTML=MIC_ICON+'Tala in';if(ta.value!==(it.outcome||''))saveNote(it,ta.value,hint);if(pendingRender&&!busy()){pendingRender=false;setTimeout(render,1800)}};
+  try{rec.start()}catch(e){return fallback()}
+  recording=rec;btn.classList.add('on');btn.innerHTML=STOP_ICON+'Stoppa';hint.className='hint';hint.textContent='Lyssnar… tryck Stoppa när du är klar.';
+}
+
+function card(it){
+  const el=document.createElement('div');el.className='card'+(it.done?' isdone':'');
+  const num=cleanNum(it.phone);
+  const by=it.addedBy&&!same(it.addedBy,personOf(it))&&!['app'].includes(it.addedBy)?`<div class="by">Inlagt av ${esc(it.addedBy)}</div>`:'';
+  el.innerHTML=`
+    <div>
+      <div class="name">${esc(it.name)}</div>
+      ${it.about?`<div class="about">${esc(it.about)}</div>`:''}
+      <div class="num">${num?esc(it.phone):'Nummer saknas'}</div>
+      ${by}
+    </div>
+    ${it.done?'':`<div class="actions">
+      <a class="big call${num?'':' off'}" href="${num?'tel:'+esc(num):'#'}">${PHONE_ICON}Ring</a>
+      <button type="button" class="big mic">${MIC_ICON}Tala in</button>
+    </div>`}
+    <textarea rows="3" placeholder="Vad gav samtalet?" aria-label="Anteckning ${esc(it.name)}">${esc(drafts[it.id]??it.outcome??'')}</textarea>
+    <div class="hint" aria-live="polite"></div>
+    <div class="row">
+      <label class="check"><input type="checkbox" ${it.done?'checked':''}> Klart</label>
+      <button type="button" class="del">Ta bort</button>
+    </div>`;
+  const ta=el.querySelector('textarea'),hint=el.querySelector('.hint');
+  ta.addEventListener('input',()=>{hint.textContent='';saveNote(it,ta.value,hint)});
+  const mic=el.querySelector('.mic');if(mic)mic.addEventListener('click',()=>dictate(it,ta,mic,hint));
+  el.querySelector('input[type=checkbox]').addEventListener('change',async e=>{
+    if(recording)recording.stop();
+    const v=e.target.checked,note=drafts[it.id];clearTimeout(saveTimers[it.id]);
+    const ok=await change(cs=>{const c=cs.find(x=>x.id===it.id);if(c){c.done=v;c.doneAt=v?new Date().toISOString():'';if(note!==undefined)c.outcome=note}},(v?'Klart: ':'Ej klart: ')+it.name);
+    if(ok){delete drafts[it.id];render()}else e.target.checked=!v;
+  });
+  const del=el.querySelector('.del');
+  del.addEventListener('click',async()=>{
+    if(!del.classList.contains('confirm')){del.classList.add('confirm');del.textContent='Tryck igen för att ta bort';setTimeout(()=>{del.classList.remove('confirm');del.textContent='Ta bort'},4000);return}
+    if(await change(cs=>{const i=cs.findIndex(x=>x.id===it.id);if(i>=0)cs.splice(i,1)},'Ta bort: '+it.name))render();
+  });
+  return el;
+}
+
+function renderTabs(){
+  const list=tabList();
+  if(!list.some(p=>same(p,tab)))tab=list[0]||ME;
+  const nav=$('tabs');nav.innerHTML='';
+  for(const p of list){
+    const open=calls.filter(c=>!c.done&&same(personOf(c),p)).length;
+    const b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');
+    b.setAttribute('aria-selected',same(p,tab)?'true':'false');
+    b.innerHTML=`${esc(same(p,ME)?p+' (du)':p)}<span class="n">${open}</span>`;
+    b.addEventListener('click',()=>{tab=p;store('delad_tab',p);render();window.scrollTo({top:0})});
+    nav.appendChild(b);
+  }
+  const sel=$('f-person');const keep=sel.value;sel.innerHTML='';
+  for(const p of list){const o=document.createElement('option');o.value=p;o.textContent=same(p,ME)?p+' (du)':p;sel.appendChild(o)}
+  sel.value=list.find(p=>same(p,keep&&$('addbox').open?keep:tab))||tab;
+  $('addsummary').textContent=same(tab,ME)?'Lägg till samtal':'Lägg till samtal åt '+tab;
+}
+
+function render(){
+  renderTabs();
+  const mineTab=calls.filter(c=>same(personOf(c),tab));
+  const open=mineTab.filter(c=>!c.done),done=mineTab.filter(c=>c.done),days=$('days');
+  days.innerHTML='';
+  if(!open.length) days.innerHTML=`<div class="empty"><b>Inga samtal i ${esc(same(tab,ME)?'din':tab+'s')} flik.</b><br>Be Claude lägga in samtal, eller lägg till nedan.</div>`;
+  else{
+    const t=today(),groups=new Map();
+    open.sort((a,b)=>{const ad=a.date||'9999',bd=b.date||'9999';return ad<bd?-1:ad>bd?1:(a.order??0)-(b.order??0)});
+    for(const c of open){const k=c.date&&c.date<t?'late':(c.date?c.date+(c.slot==='kväll'?'~kväll':''):'none');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(c)}
+    const keys=[...groups.keys()].sort((a,b)=>{const r=k=>k==='late'?'0':k==='none'?'z':k;return r(a)<r(b)?-1:1});
+    for(const k of keys){
+      const list=groups.get(k),eve=k.endsWith('~kväll'),dk=k.replace('~kväll','');
+      let [lbl,sub]=k==='late'?['Försenat','']:dayLabel(dk==='none'?'':dk);
+      if(eve)lbl=lbl==='Idag'?'Ikväll':lbl+', kväll';
+      const sec=document.createElement('section');sec.className='day';
+      sec.innerHTML=`<h2>${esc(lbl)} ${sub?`<span class="when">${esc(sub)}</span>`:''}<span class="count">${list.length} st</span></h2>`;
+      list.forEach(c=>sec.appendChild(card(c)));days.appendChild(sec);
+    }
+  }
+  $('donecount').textContent=done.length;
+  const dl=$('donelist');dl.innerHTML='';
+  done.sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||'')).forEach(c=>dl.appendChild(card(c)));
+  $('whoami').textContent=ME;
+}
+
+function showApp(on){
+  $('setup').hidden=on;
+  ['refresh','tabs','addbox','historybox','settings'].forEach(id=>$(id).hidden=!on);
+  if(!on){$('days').innerHTML='';$('owner').value=OWNER;$('repo').value=REPO;$('me').value=ME}
+}
+
+$('tokenform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  token=$('token').value.trim();OWNER=$('owner').value.trim();REPO=$('repo').value.trim();ME=$('me').value.trim();
+  if(!token||!OWNER||!REPO||!ME)return;
+  status('Kopplar…');
+  try{
+    await load();
+    const known=findPerson(ME);if(known)ME=known;
+    setToken(token);store('delad_owner',OWNER);store('delad_repo',REPO);store('delad_me',ME);
+    if(!known) await change((cs,ps)=>{if(!ps.some(p=>same(p,ME)))ps.push(ME)},'Ny person: '+ME);
+    tab=ME;store('delad_tab',ME);
+    $('token').value='';showApp(true);status('');render();
+    toast('Kopplat! Lägg appen på hemskärmen via Dela → Lägg till på hemskärmen.',6000);
+  }
+  catch(err){token=null;status(err.status===404||err.status===403||err.status===401?'Det gick inte. Kontrollera organisationens namn, att förrådet '+REPO+' finns, och att koden gäller organisationen med Contents: Read and write.':'Ingen kontakt just nu, försök igen.',true)}
+});
+$('addform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('f-name').value.trim();if(!name)return;
+  const person=$('f-person').value||tab;
+  const item={id:'m-'+Date.now().toString(36),person,name,phone:$('f-phone').value.trim(),about:$('f-about').value.trim(),date:$('f-date').value||'',order:Date.now(),done:false,outcome:'',doneAt:'',addedBy:ME,createdAt:new Date().toISOString()};
+  if(await change((cs,ps)=>{cs.push(item);if(!ps.some(p=>same(p,person)))ps.push(person)},'Nytt samtal åt '+person+': '+name)){
+    e.target.reset();$('addbox').open=false;tab=person;store('delad_tab',person);render();
+    if(!same(person,ME))toast('Inlagt i '+person+'s flik.');
+  }
+});
+$('personform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const n=$('p-name').value.trim();if(!n)return;
+  if(findPerson(n)){toast(n+' har redan en flik.');return}
+  if(await change((cs,ps)=>{if(!ps.some(p=>same(p,n)))ps.push(n)},'Ny person: '+n)){e.target.reset();tab=n;store('delad_tab',n);render();toast('Fliken '+n+' är tillagd.')}
+});
+$('addbox').addEventListener('toggle',()=>{if($('addbox').open)$('f-person').value=tabList().find(p=>same(p,tab))||tab});
+$('refresh').addEventListener('click',()=>refresh(false));
+$('logout').addEventListener('click',()=>{setToken(null);token=null;calls=[];people=[];showApp(false)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&token)refresh(true)});
+document.addEventListener('focusout',()=>setTimeout(()=>{if(pendingRender&&!busy()){pendingRender=false;render()}},60));
+/* Hämtar kompisarnas ändringar en gång i minuten medan appen är öppen. */
+setInterval(()=>{if(token&&document.visibilityState==='visible')refresh(true)},60000);
+
+(async()=>{
+  token=getToken();
+  if(!token||!ME){showApp(false);return}
+  showApp(true);$('days').innerHTML='<div class="empty">Hämtar listan…</div>';
+  await refresh(false);
+})();
+</script>
+</body>
+</html>
